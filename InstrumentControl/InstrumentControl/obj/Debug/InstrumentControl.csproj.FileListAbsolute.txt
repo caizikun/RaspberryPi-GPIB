@@ -1,0 +1,8 @@
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\bin\Debug\InstrumentControl.exe.config
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\bin\Debug\InstrumentControl.exe
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\bin\Debug\InstrumentControl.pdb
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\bin\Debug\Renci.SshNet.dll
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\bin\Debug\Renci.SshNet.xml
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\obj\Debug\InstrumentControl.csprojResolveAssemblyReference.cache
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\obj\Debug\InstrumentControl.exe
+c:\users\craig\documents\visual studio 2015\Projects\InstrumentControl\InstrumentControl\obj\Debug\InstrumentControl.pdb
