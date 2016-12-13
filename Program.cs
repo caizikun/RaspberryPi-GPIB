@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
+using System;
 using System.Threading;
 using System.IO;
 using System.Diagnostics;
@@ -13,7 +9,7 @@ namespace InstrumentControl
     public class Connection
     {
         public bool isConnected = false;
-        
+
         // SSH connection properties
         public static string host = "192.168.1.66";
         public static string user = "pi";
@@ -80,7 +76,7 @@ namespace InstrumentControl
             Console.WriteLine(output.Result);
         }
 
-        public void Read()
+        public string Read()
         {
             try { File.Delete(out_file); }
             catch { }
@@ -96,30 +92,36 @@ namespace InstrumentControl
                 {
                     // Read the stream to a string, and write the string to the console.
                     String line = sr.ReadToEnd();
-                    Console.WriteLine(line);
+                    Console.WriteLine(line.Replace(@"^M", "").Replace("\0", string.Empty).Trim());
+                    return line.Replace(@"^M", "").Replace("\0", string.Empty).Trim();   
                 }
+                
             }
             catch (Exception e)
             {
                 Console.WriteLine("The file could not be read:");
                 Console.WriteLine(e.Message);
+                return "";
             }
 
-            Thread.Sleep(100);
+            
+
         }
 
     }
 
     public class Anritsu
     {
-        public Anritsu(Connection con)
+        public Anritsu(Connection con, int addr)
         {
             _connection = con;
+            _addr = addr;
         }
 
         private Connection _connection;
+        private int _addr;
 
-        private int addr = 11; // GPIB Address
+        //private int addr = 11; // GPIB Address
 
         public void RFOn()
         {
@@ -130,7 +132,7 @@ namespace InstrumentControl
             }
 
             // Turn RF On
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo RF1 >{1};", addr, _connection.comport)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo RF1 >{1};", _addr, _connection.comport)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo RFON");
             Console.WriteLine(output.Result);
 
@@ -145,7 +147,7 @@ namespace InstrumentControl
             }
 
             // Turn RF Off
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo RF0 >{1};", addr, _connection.comport)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo RF0 >{1};", _addr, _connection.comport)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo RFON");
             Console.WriteLine(output.Result);
 
@@ -161,7 +163,7 @@ namespace InstrumentControl
             }
 
             // Set Freq
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo CF1 {2} GH CF1 >{1};", addr, _connection.comport, f)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo CF1 {2} GH CF1 >{1};", _addr, _connection.comport, f)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo FreqSet");
             Console.WriteLine(output.Result);
         }
@@ -175,12 +177,12 @@ namespace InstrumentControl
                 _connection.InitializeSSH();
             }
             // Set Power
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo L0 {2} DM L0 >{1};", addr, _connection.comport, p)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{1};echo L0 {2} DM L0 >{1};", _addr, _connection.comport, p)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo PowSet");
             Console.WriteLine(output.Result);
         }
 
-        public void get_freq()
+        public string get_freq()
         // returns freq in MHz
         {
             if (!_connection.isConnected)
@@ -190,15 +192,15 @@ namespace InstrumentControl
             }
 
             // Get Freq
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 >  {0}; echo ++addr {1} >{2}; echo OF1 >{2};", _connection.out_file, addr, _connection.comport)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 >  {0}; echo ++addr {1} >{2}; echo OF1 >{2};", _connection.out_file, _addr, _connection.comport)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo FreqAcq");
             Console.WriteLine(output.Result);
 
             // Gather data, write to output file, and read.
-            _connection.Read();
-
+            string frequency = _connection.Read();
+            return frequency;
         }
-        public void get_power()
+        public string get_power()
         // returns power in dBm
         {
             if (!_connection.isConnected)
@@ -208,25 +210,27 @@ namespace InstrumentControl
             }
 
             // Get Power
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 > {0};echo ++addr {1} >{2}; echo OL0 >{2}; ", _connection.out_file, addr, _connection.comport)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 > {0};echo ++addr {1} >{2}; echo OL0 >{2}; ", _connection.out_file, _addr, _connection.comport)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo PowAcq");
             Console.WriteLine(output.Result);
 
             // Gather data, write to output file, and read.
-            _connection.Read();
+            string power  = _connection.Read();
+            return power;
         }
     }
 
     public class Keysight
     {
-        public Keysight(Connection con)
+        public Keysight(Connection con, int addr)
         {
             _connection = con;
+            _addr = addr;
         }
         private Connection _connection;
-
+        private int _addr;
         // GPIB properties
-        private int addr = 28;
+        //private int addr = 28;
 
         public void SetAtten(string attenValue)
         {
@@ -242,13 +246,13 @@ namespace InstrumentControl
             string setY = Y.ToString();
             string setX = X.ToString();
             // Set Atten
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{2};echo ATT:X {1} >{2};", addr, setX, _connection.comport)); cmd1.Execute();
-            SshCommand cmd2 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{2};echo ATT:Y {1} >{2};", addr, setY, _connection.comport)); cmd2.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{2};echo ATT:X {1} >{2};", _addr, setX, _connection.comport)); cmd1.Execute();
+            SshCommand cmd2 = _connection.client.CreateCommand(string.Format("echo ++addr {0} >{2};echo ATT:Y {1} >{2};", _addr, setY, _connection.comport)); cmd2.Execute();
             var output = _connection.client.RunCommand("echo AttenSet");
             Console.WriteLine(output.Result);
         }
 
-        public void get_attenX()
+        public string get_attenX()
         // returns power in dBm
         {
             if (!_connection.isConnected)
@@ -258,15 +262,16 @@ namespace InstrumentControl
             }
 
             // Get Atten
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 > {0};echo ++addr {1} >{2}; echo ATT:X? >{2}; ", _connection.out_file, addr, _connection.comport)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 > {0};echo ++addr {1} >{2}; echo ATT:X? >{2}; ", _connection.out_file, _addr, _connection.comport)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo PowAcq");
             Console.WriteLine(output.Result);
-            
+
             // Gather data, write to output file, and read.
-            _connection.Read();
+            string attenuator = _connection.Read();
+            return attenuator;
         }
 
-        public void get_attenY()
+        public string get_attenY()
         // returns power in dBm
         {
             if (!_connection.isConnected)
@@ -276,12 +281,13 @@ namespace InstrumentControl
             }
 
             // Get Atten
-            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 > {0};echo ++addr {1} >{2}; echo ATT:Y? >{2}; ", _connection.out_file, addr, _connection.comport)); cmd1.Execute();
+            SshCommand cmd1 = _connection.client.CreateCommand(string.Format("truncate -s 0 > {0};echo ++addr {1} >{2}; echo ATT:Y? >{2}; ", _connection.out_file, _addr, _connection.comport)); cmd1.Execute();
             var output = _connection.client.RunCommand("echo PowAcq");
             Console.WriteLine(output.Result);
 
             // Gather data, write to output file, and read.
-            _connection.Read();
+            string attenuator = _connection.Read();
+            return attenuator;
         }
     }
 
@@ -295,18 +301,19 @@ namespace InstrumentControl
             int pow = rand.Next(-20, 1);
             Console.WriteLine(freq.ToString());
             Console.WriteLine(pow.ToString());
+
             Connection con = new Connection();
             con.InitializeSSH();
 
-            Anritsu an = new Anritsu(con);
+            Anritsu an = new Anritsu(con, 11);
             an.RFOn();
             an.RFOff();
             an.set_freq(freq.ToString());
             an.set_power(pow.ToString());
             an.get_freq();
             an.get_power();
-            
-            //Keysight key = new Keysight(con);
+
+            //Keysight key = new Keysight(con, 28);
             //key.SetAtten("22");
             //key.get_attenX();
             //key.get_attenY();
