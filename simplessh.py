@@ -9,10 +9,10 @@ class Connection(object):
     Arguments that are not given are guessed from the environment."""
 
     def __init__(self,
-                 host = '192.168.1.66',
-                 username = 'pi',
+                 host = '192.168.0.120',
+                 username = 'root',
                  private_key = None,
-                 password = 'raspberry',
+                 password = None,
                  port = 22,
                  ):
         self._sftp_live = False
